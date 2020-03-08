@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.conf import settings
 import re
-
-
+import os
 class Appearance:
     """
     Represents the appearance of a term in a given document, along with the
@@ -53,9 +53,10 @@ class InvertedIndex:
     Inverted Index class.
     """
     def __init__(self, db):
+        global global_id
         self.index = dict()
         self.db = db
-
+        
     def __repr__(self):
         """
         String representation of the Database object
@@ -92,17 +93,27 @@ class InvertedIndex:
         This is a very naive search since it will just split the terms and show
         the documents where they appear.
         """
-        if query in self.index:
-            result = []
-            count = 0
-            for x in self.index[query]:
-                count += 1
-                result.append([x.frequency, x.docId])
-                if count == 10:
-                    break
-            return sorted(result, reverse=True)
-        else:
-            return []
+        #print("dwad")
+        try:
+            query_words=query.split(" ")
+        except Exception as e:
+            print(e)
+        print(query_words)
+        scores=dict()
+        for word in query_words:
+            word=word.strip()
+            print(word)
+            if word in self.index:
+                for x in self.index[word]:
+                    if x.docId in scores:
+                        scores[x.docId]=scores[x.docId]+x.frequency
+                    else:
+                        scores[x.docId]=x.frequency
+                #result.append([x.frequency, x.docId])
+                #if count == 10:
+                    #break
+        return sorted([[scores[key],key] for key in scores], reverse=True)
+        
 
 
 # Global variables of the above created classes for storing inverted-indexes
@@ -119,11 +130,12 @@ def clear_indexes(request):
     index = InvertedIndex(db)
     return Response({"mssg": "All the indexes has been cleared."})
 
-
+'''
 @api_view(['GET', 'POST'])
 def indexing_docs(request):
     global global_id, index
     try:
+        
         docs = request.data['data']
         docs = docs.split('\n\n')
         print(docs)
@@ -137,7 +149,32 @@ def indexing_docs(request):
     except Exception as e:
         return Response({"status": 0})
     return Response({"status": 1})
-
+'''
+@api_view(['GET', 'POST'])
+def indexing_docs(request):
+    global global_id, index
+    try:
+        path=os.path.join(settings.STATIC_ROOT,"split_1000")
+        for filename in os.listdir(path):
+            #print(filename)
+            if "raw" not in filename:
+                continue
+            filepath=os.path.join(path,filename)
+            #print(filepath)
+            with open(filepath,"r") as f:
+                docs=f.read().splitlines()
+                #print(docs)
+                for par in docs:
+                    document = {
+                    'id': global_id,
+                    'text': par
+                     }
+                    index.index_document(document)
+                    global_id = global_id + 1
+            break
+    except Exception as e:
+        return Response({"status": 0})
+    return Response({"status": 1})
 
 @api_view(['GET', 'POST'])
 def search_word(request):

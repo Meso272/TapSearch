@@ -18,7 +18,7 @@ function App() {
         <Route exact path="/Lsearch" component={LSearch} />
         <Route exact path="/index" component={Index} />
         <Route path="/getall" component={AllDocuments} />
-        {/* <Route exact path="/document/:id" component={Document} /> */}
+        { <Route exact path="/document/:id" component={Document} /> }
         <Route exact path="/clear" component={Clear} />
       </BrowserRouter>
     </div>

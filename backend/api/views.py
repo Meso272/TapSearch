@@ -224,12 +224,14 @@ def search_word(request):
     return Response({"docs": res})
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def get_document(request, id):
+    #print(0)
     global db
     if id not in db.db.keys():
+        #print("no")
         return Response({"text": ""})
-    print(db.db[id])
+    #print(db.db[id])
     return Response({"text": db.db[id]['text']})
 
 

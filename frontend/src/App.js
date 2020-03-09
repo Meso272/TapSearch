@@ -3,6 +3,7 @@ import "./App.css";
 import NavBar from "./Components/NavBar";
 import { Route, BrowserRouter } from "react-router-dom";
 import Search from "./Components/Search";
+import LSearch from "./Components/LSearch";
 import Index from "./Components/Index";
 import AllDocuments from "./Components/AllDocuments";
 import Document from "./Components/Document";
@@ -14,6 +15,7 @@ function App() {
       <BrowserRouter>
         <NavBar />
         <Route exact path="/search" component={Search} />
+        <Route exact path="/Lsearch" component={LSearch} />
         <Route exact path="/index" component={Index} />
         <Route path="/getall" component={AllDocuments} />
         {/* <Route exact path="/document/:id" component={Document} /> */}

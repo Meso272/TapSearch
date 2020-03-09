@@ -23,19 +23,12 @@ export class Index extends Component {
     return (
       <div>
         <form onSubmit={this.onIndex} style={{ display: "flex" }}>
-          <textarea
-            type="text"
-            name="docs"
-            style={{ flex: "10", padding: "5px", height: "610px" }}
-            placeholder="Index the documents."
-            value={this.state.docs}
-            onChange={this.onChange}
-          />
+          
           <input
             type="submit"
             value="IndexIt"
             className="btn"
-            style={{ flex: "1", height: "20px" }}
+            style={{ flex: "10", height: "200px" }}
           />
         </form>
       </div>

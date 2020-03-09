@@ -16,13 +16,17 @@ class NavBar extends Component {
     };
     return (
       <header style={headerStyle}>
-        <h1>TapSearch</h1>
+        <h1>Tweet Searcher</h1>
         <Link style={linkStyle} to="/index">
           Index
         </Link>{" "}
         |{" "}
         <Link style={linkStyle} to="/search">
           Search
+        </Link>{" "}
+        |{" "}
+        <Link style={linkStyle} to="/Lsearch">
+          LSearch
         </Link>{" "}
         |{" "}
         <Link style={linkStyle} to="/getall">

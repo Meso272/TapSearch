@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from django.conf import settings
 import re
 import os
+from nltk.stem import PorterStemmer
+stemmer = PorterStemmer()
 class Appearance:
     """
     Represents the appearance of a term in a given document, along with the
@@ -62,14 +64,42 @@ class InvertedIndex:
         String representation of the Database object
         """
         return str(self.index)   
+    def index_from_invertedlist(self,invertedlist):
+        with open(invertedlist,"r") as f:
+            #print(20)
+            lines=f.read().splitlines()
+            for line in lines:
+                
+                line=line.strip()
+                #print(40)
+                word=line.split('\t')[0].strip()
+                freqs=line.split('\t')[1].strip()
+                apps=[]
+                #print(60)
+                #print(freqs)
+                for tf_pair in freqs.split(';'):
+                    #print(tf_pair)
+                    if ":" not in tf_pair:
+                        continue
+                    docid=int(tf_pair.split(':')[0])
+                    freq=int(tf_pair.split(':')[1])
+                    apps.append(Appearance(docid,freq))
+                #print(80)
+                if word not in self.index:
+                    self.index[word]=apps
+                else:
+                    self.index[word]=self.index[word]+apps
 
+        
     def index_document(self, document):
         """
         Process a given document, save it to the DB and update the index.
         """
         # Remove punctuation from the text.
         clean_text = re.sub(r'[^\w\s]', '', document['text'])
+        '''
         terms = re.split(' |\n', clean_text)
+    
         appearances_dict = dict() 
         # Dictionary with each term and the frequency it appears in the text.
         for term in terms:
@@ -82,7 +112,8 @@ class InvertedIndex:
                        if key not in self.index
                        else self.index[key] + [appearance]
                        for (key, appearance) in appearances_dict.items()}
-        self.index.update(update_dict)        
+        self.index.update(update_dict)     
+        '''   
         # Add the document into the database
         self.db.add(document)        
         return document
@@ -94,6 +125,7 @@ class InvertedIndex:
         the documents where they appear.
         """
         #print("dwad")
+        #print(self.index)
         try:
             query_words=query.split(" ")
         except Exception as e:
@@ -101,10 +133,13 @@ class InvertedIndex:
         print(query_words)
         scores=dict()
         for word in query_words:
-            word=word.strip()
-            print(word)
+            word=stemmer.stem(word.strip())
+            #print(word)
             if word in self.index:
+                
+
                 for x in self.index[word]:
+                    #print(x)
                     if x.docId in scores:
                         scores[x.docId]=scores[x.docId]+x.frequency
                     else:
@@ -154,24 +189,27 @@ def indexing_docs(request):
 def indexing_docs(request):
     global global_id, index
     try:
-        path=os.path.join(settings.STATIC_ROOT,"split_1000")
+        path=os.path.join(os.path.join(settings.STATIC_ROOT,"split_50"),"raw")
+        invertedlist=os.path.join(settings.STATIC_ROOT,"ilist")
+        print(0)
+        index.index_from_invertedlist(invertedlist)
+        print(100)
         for filename in os.listdir(path):
             #print(filename)
-            if "raw" not in filename:
-                continue
+            docid=int(filename.split('.')[0])
             filepath=os.path.join(path,filename)
             #print(filepath)
             with open(filepath,"r") as f:
-                docs=f.read().splitlines()
+                doc=f.read()
                 #print(docs)
-                for par in docs:
-                    document = {
-                    'id': global_id,
-                    'text': par
-                     }
-                    index.index_document(document)
-                    global_id = global_id + 1
-            break
+                
+                document = {
+                'id': docid,
+                'text': doc
+                 }
+                index.index_document(document)
+                global_id = global_id + 1
+            #break
     except Exception as e:
         return Response({"status": 0})
     return Response({"status": 1})
@@ -180,9 +218,9 @@ def indexing_docs(request):
 def search_word(request):
     global index, db
     res = index.lookup_query(request.data['word'].lower())
-    print(res)
+    #print(res)
     for x in res:
-        x.append(db.db[x[1]]['text'])
+        x.append(db.db[x[1]]['text'][:250]+"......")
     return Response({"docs": res})
 
 
@@ -198,5 +236,5 @@ def get_document(request, id):
 @api_view(['GET'])
 def get_all(request):
     global db
-    res = [[db.db[x]['id'], db.db[x]['text']] for x in db.db.keys()]
+    res = [[db.db[x]['id'], db.db[x]['text'][:250]+"......"] for x in db.db.keys()]
     return Response({"docs": res})

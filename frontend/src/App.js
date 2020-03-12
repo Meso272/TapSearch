@@ -15,7 +15,7 @@ function App() {
       <BrowserRouter>
         <NavBar />
         <Route exact path="/search" component={Search} />
-        <Route exact path="/Lsearch" component={LSearch} />
+        <Route exact path="/lsearch" component={LSearch} />
         <Route exact path="/index" component={Index} />
         <Route path="/getall" component={AllDocuments} />
         { <Route exact path="/document/:id" component={Document} /> }

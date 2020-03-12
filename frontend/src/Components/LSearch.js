@@ -55,14 +55,14 @@ export class LSearch extends Component {
         {this.state.references.map(reference => (
           <div style={this.getStyle()}>
             <p>
-              No of Occurences: {reference[0]}
+              Score: {reference[0]}
               <br />
               DocumentID: {reference[1]}
               <br />
               Document Text:{reference[2]}
-              {/* <form action={"/document/" + reference[1]}>
+              { <form action={"/document/" + reference[1]}>
                 <input type="submit" value="See the Document" />
-              </form> */}
+              </form> }
             </p>
           </div>
         ))}

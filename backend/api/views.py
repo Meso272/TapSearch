@@ -5,6 +5,10 @@ import re
 import os
 from nltk.stem import PorterStemmer
 stemmer = PorterStemmer()
+
+lucene_index_path=os.path.join(settings.STATIC_ROOT,"index")
+lucene_index_program=os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,"lucene"),"src"),"IndexFiles.java")
+lucene_search_program=os.path.join(os.path.join(os.path.join(settings.STATIC_ROOT,"lucene"),"src"),"SearchFiles.java")
 class Appearance:
     """
     Represents the appearance of a term in a given document, along with the
@@ -130,7 +134,7 @@ class InvertedIndex:
             query_words=query.split(" ")
         except Exception as e:
             print(e)
-        print(query_words)
+        #print(query_words)
         scores=dict()
         for word in query_words:
             word=stemmer.stem(word.strip())
@@ -148,6 +152,35 @@ class InvertedIndex:
                 #if count == 10:
                     #break
         return sorted([[scores[key],key] for key in scores], reverse=True)
+    def lookup_query_lucene(self, query):
+        print(0)
+        global lucene_search_program,lucene_index_path
+        try:
+            query_words=query.split(" ")
+        except Exception as e:
+            print(e)
+        print(query_words)
+        query_words=[stemmer.stem(word.strip()) for word in query_words]
+        newquery=" ".join(query_words) 
+        print(newquery)
+        tempfilepath=os.path.join(settings.STATIC_ROOT,"temp.txt")
+        command="java "+lucene_search_program+" -index "+lucene_index_path+" -query "+ newquery+ ">"+tempfilepath
+        print(command)
+        try:
+            os.system(command)
+            print(2)
+            scores=[]
+            with open(tempfilepath,"r") as f:
+                lines=f.read().splitlines()
+                for line in lines:
+                    line=line.strip()
+                    print(4)
+                    pair=eval(line)
+                    scores.append([pair[1],pair[0]])
+                    print(6)
+            return sorted(scores,reverse=True)
+        except Exception as e:
+            print(e)
         
 
 
@@ -155,8 +188,10 @@ class InvertedIndex:
 db = Database()
 index = InvertedIndex(db)
 global_id = 0
+raw_doc_path=os.path.join(os.path.join(settings.STATIC_ROOT,"split_50_new"),"raw")
+preprocessed_doc_path=os.path.join(os.path.join(settings.STATIC_ROOT,"split_50_new"),"wordlist")
 
-
+invertedlistpath=os.path.join(settings.STATIC_ROOT,"ilist")
 @api_view(['GET', 'POST'])
 def clear_indexes(request):
     global global_id, db, index
@@ -187,21 +222,21 @@ def indexing_docs(request):
 '''
 @api_view(['GET', 'POST'])
 def indexing_docs(request):
-    global global_id, index
+    global global_id, index, raw_doc_path, invertedlistpath
     try:
-        path=os.path.join(os.path.join(settings.STATIC_ROOT,"split_50"),"raw")
-        invertedlist=os.path.join(settings.STATIC_ROOT,"ilist")
+        
+        
         print(0)
-        index.index_from_invertedlist(invertedlist)
+        index.index_from_invertedlist(invertedlistpath)
         print(100)
-        for filename in os.listdir(path):
+        for filename in os.listdir(raw_doc_path):
             #print(filename)
             docid=int(filename.split('.')[0])
-            filepath=os.path.join(path,filename)
+            filepath=os.path.join(raw_doc_path,filename)
             #print(filepath)
             with open(filepath,"r") as f:
                 doc=f.read()
-                #print(docs)
+                #print(doc)
                 
                 document = {
                 'id': docid,
@@ -222,7 +257,17 @@ def search_word(request):
     for x in res:
         x.append(db.db[x[1]]['text'][:250]+"......")
     return Response({"docs": res})
-
+@api_view(['GET', 'POST'])
+def search_word_lucene(request):
+    global index, db
+    print(-4)
+    res = index.lookup_query_lucene(request.data['word'].lower())
+    print(99)
+    print(res)
+    for x in res:
+        x.append(db.db[x[1]]['text'][:250]+"......")
+    print(res)
+    return Response({"docs": res})
 
 @api_view(['GET', 'POST'])
 def get_document(request, id):
